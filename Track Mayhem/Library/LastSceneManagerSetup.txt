@@ -1,5 +1,5 @@
 sceneSetups:
-- path: Assets/Scenes/Testing/Testing.unity
+- path: Assets/Scenes/LongJump/LongJump.unity
   isLoaded: 1
   isActive: 1
   isSubScene: 0
