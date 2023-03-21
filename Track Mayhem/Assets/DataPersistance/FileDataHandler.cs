@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 
 public class FileDataHandler
 {
@@ -37,7 +38,8 @@ public class FileDataHandler
                         dataToLoad = reader.ReadToEnd();
                     }
                 }
-                dataToLoad = EncryptDecrypt(dataToLoad);
+                //dataToLoad = EncryptDecrypt(dataToLoad);
+                Debug.Log(dataToLoad);
                 loadedData = JsonUtility.FromJson<GameData>(dataToLoad);
             }
             catch (Exception e)
@@ -54,7 +56,6 @@ public class FileDataHandler
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(fullpath));
-            Directory.CreateDirectory("TEsting");
             string dataToStore = JsonUtility.ToJson(data, true);
             
             if (useEncryption)
@@ -72,6 +73,7 @@ public class FileDataHandler
         {
             Debug.Log("Error when trying to save the data to " + fullpath + "\n" + e);
         }
+
     }
 
     private string EncryptDecrypt (string data)
