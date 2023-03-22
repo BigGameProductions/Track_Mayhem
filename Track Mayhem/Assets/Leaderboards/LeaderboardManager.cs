@@ -14,10 +14,12 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
     [SerializeField] private float seedSpreadDown; //how much the players will be spread from the seed down
     [SerializeField] private float seedSpreadUp; //how much the players will be spread from the seed up
     [SerializeField] private Image[] leaderboardBanners; //a list of all the leaderboard banners that need to have information on them
+    [SerializeField] private Camera cinematicCamera; // the camaera that plays the animations before the event
 
 
     private PersonalBests personalBests; //store personals bests for seeding
     private string playerName; //store the name of the player
+    private int animationStage = 0; //stores the stage for the cinematic camera before an event
 
     private float basedSeed; //stores the based seed for the current event
 
@@ -34,14 +36,49 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
 
     private void Start()
     {
-        PlayerBanner[] playerBanners = generateBanners(7, true);
-        PlayerBanner[] recordPlayerBanners = new PlayerBanner[] {
+        //nothing for now
+
+        //temp
+        cinematicCamera.GetComponent<Animator>().speed = 10;
+        //temp
+
+        
+    }
+
+    private void Update()
+    {
+        if (cinematicCamera.GetComponent<Animator>().GetInteger("Stage") != animationStage)
+        {
+            animationStage = cinematicCamera.GetComponent<Animator>().GetInteger("Stage"); //update the current stage
+            updateCinematicStage(animationStage); //update the leaderboard
+        }
+    }
+
+    //stage same as mode for setLeaderboard
+    private void updateCinematicStage(int stage)
+    {
+        if (stage==0) //hides the leaderboard when it should not be shown
+        {
+            gameObject.GetComponentInChildren<Canvas>().enabled = false;
+            return;
+        } else if (gameObject.GetComponentInChildren<Canvas>().enabled == false) //make sure leaderboard is visible for other stages too
+        {
+            gameObject.GetComponentInChildren<Canvas>().enabled = true;
+        }
+        PlayerBanner[] playerBanners = new PlayerBanner[0];
+        if (stage == 1)
+        {
+            playerBanners = generateBanners(7, true);
+            
+        } else if (stage == 2)
+        {
+            playerBanners = new PlayerBanner[] {
             new PlayerBanner(0, 0, "Olympic", 100),
             new PlayerBanner(0, 0, "World", 98),
             new PlayerBanner(0, 0, playerName, basedSeed)
-        };
-        setLeaderboard(recordPlayerBanners, 2);
-        
+             };
+        }
+        setLeaderboard(playerBanners, stage);
     }
 
     //int size for amount of banners
@@ -115,6 +152,7 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
 
     }
 
+    //mode 0 = hide leaderboard
     //mode 1 = normal 8 person leaderboard with best marks
     //mode 2 = olympic and world records and personal bests
     private void setLeaderboard(PlayerBanner[] playerBanners, int mode) //sets the leaderboard according to the array of playerBanners that it is given
@@ -138,7 +176,7 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
             textBoxes[1].text = playerBanners[i].player; //playerName text box
             if (mode == 1)
             {
-                leaderboardBanners[i].GetComponentsInChildren<RectTransform>(true)[0].gameObject.SetActive(true); //best mark label
+                leaderboardBanners[i].GetComponentsInChildren<RectTransform>(true)[4].gameObject.SetActive(true); //best mark label
                 textBoxes[2].text = playerBanners[i].bestMark.ToString(); //best mark text box
             }
             else if (mode == 2)
@@ -162,5 +200,4 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
 
 //TODO Animations for the leaderboard
 //TODO flags for the leaderboard
-//TODO Make first stage of leaderboard (mode already created...add transition for it)
 //TODO Make names list for players
