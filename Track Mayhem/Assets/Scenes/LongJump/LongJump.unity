@@ -1025,7 +1025,8 @@ MonoBehaviour:
   animationRunningSpeedRatio: 0.008
   jumpMeterToTop: 140
   jumpBarSpeed: 250
-  powerToAnimationSpeedRatio: 0.08
+  powerToAnimationSpeedRatio: 0.07
+  pullInLegPower: 7
   increaseForBarToTheTop: 140
   barDecreaseSpeed: 300
 --- !u!4 &1139171310
@@ -1256,7 +1257,7 @@ Rigidbody:
   m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!65 &1387769877
 BoxCollider:

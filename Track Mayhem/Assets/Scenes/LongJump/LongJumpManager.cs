@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -26,6 +27,7 @@ public class LongJumpManager : MonoBehaviour
     [SerializeField] private float jumpBarSpeed; //stores how fast the jump bar moves
 
     [SerializeField] private float powerToAnimationSpeedRatio;
+    [SerializeField] private float pullInLegPower;
 
 
     private float startingBarHeight; //stores the starting height of the meter bar
@@ -91,17 +93,53 @@ public class LongJumpManager : MonoBehaviour
                 StartCoroutine(jumpMeterHold(0.5f)); //calls waiting method 
             }
         }
+        if (player.GetComponent<Rigidbody>().useGravity) //if in jumping animation
+        {
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                float playerHeight = player.transform.position.y;
+                if (playerHeight<227.4 && playerHeight>225.5) //checks if the leg pull is within an optimal range to work
+                {
+                    player.GetComponent<Rigidbody>().velocity = new Vector3(pullInLegPower, 0, 0); //gives a little extra boost
+                }
+                else
+                {
+                    player.GetComponent<Rigidbody>().velocity = new Vector3(0, 0, 0); //makes the player stop the jump
+                }
+                player.GetComponentInChildren<Animator>().Play("LegPull"); //pulls in legs
+
+
+
+
+            }
+            if (player.transform.position.y<225.5)
+            {
+                player.GetComponent<Rigidbody>().useGravity = false; //stops the jumping animation loop
+                StartCoroutine(waitAfterJump());
+            }
+        }
         
     }
+
+    IEnumerator waitAfterJump()
+    {
+        yield return new WaitForSeconds(1);
+        //-1899.73 At 0 feet 
+        //-1864.7 At 19 feet
+        //-1875.03 At 16 feet
+        float spacesPerInch = (1875.03f - 1864.7f) / 36f; //16 feet minus 19 feet divided by the inches in 3 feet
+        int totalInches = (int)Math.Round((1930.4792068f + player.transform.position.x) / spacesPerInch); //finds total inches that have been jumped (distance jumped divided by spaces per inch of the sand)
+    }
+
 
     IEnumerator jumpMeterHold(float time) //holds the meter forzen for time so you can she what it landed on
     {
         yield return new WaitForSeconds(time);
         jumpMeterBar.gameObject.transform.parent.gameObject.SetActive(false); //sets the jump meter to hiding
-        float power = 10; //temp
+        float power = 15; //temp
         player.GetComponentInChildren<Animator>().Play("LongJump");
         player.GetComponentInChildren<Animator>().speed = power * powerToAnimationSpeedRatio;
-        player.GetComponent<Rigidbody>().velocity = new Vector3(power, power*0.75f, 0); //make charcter jump
+        player.GetComponent<Rigidbody>().velocity = new Vector3(power, power*0.6f, 0); //make charcter jump
         player.GetComponent<Rigidbody>().useGravity = true;
     }
 
@@ -120,3 +158,4 @@ public class LongJumpManager : MonoBehaviour
 
 //TODO make the spacebar get in legs
 //TODO make faults
+//TODO make speed equal to the running
