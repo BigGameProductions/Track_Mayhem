@@ -15,6 +15,10 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
     [SerializeField] private float seedSpreadUp; //how much the players will be spread from the seed up
     [SerializeField] private Image[] leaderboardBanners; //a list of all the leaderboard banners that need to have information on them
     [SerializeField] private Camera cinematicCamera; // the camaera that plays the animations before the event
+    [SerializeField] private GameObject leaderBoardHeader; //the header for the main leaderboard;
+    [SerializeField] private GameObject personalBanner; //the banner shown for the player after each jump
+
+    private PlayerBanner[] currentEventBanners;
 
 
     private PersonalBests personalBests; //store personals bests for seeding
@@ -22,6 +26,8 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
     private int animationStage = 0; //stores the stage for the cinematic camera before an event
 
     private float basedSeed; //stores the based seed for the current event
+
+    private string[] personalBannersMarks; //stores the given set of marks for the event
 
     public void LoadData(GameData data)
     {
@@ -54,21 +60,35 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
         }
     }
 
+
+    public void showCurrentPlayerMarks(string[] marks, int stageNum) //shows the single banner of the player preformace
+    {
+        personalBannersMarks = marks;
+        updateCinematicStage(stageNum);
+    }
+
+    public void hidePersonalBanner() //hides the personal banner for the player
+    {
+        updateCinematicStage(0);
+    }
+
     //stage same as mode for setLeaderboard
     private void updateCinematicStage(int stage)
     {
         if (stage==0) //hides the leaderboard when it should not be shown
         {
-            gameObject.GetComponentInChildren<Canvas>().enabled = false;
+            leaderBoardHeader.SetActive(false);
+            personalBanner.SetActive(false);
             return;
-        } else if (gameObject.GetComponentInChildren<Canvas>().enabled == false) //make sure leaderboard is visible for other stages too
+        } else if (!leaderBoardHeader.activeInHierarchy && stage != 3) //make sure leaderboard is visible for other stages too
         {
-            gameObject.GetComponentInChildren<Canvas>().enabled = true;
+            leaderBoardHeader.SetActive(true);
         }
         PlayerBanner[] playerBanners = new PlayerBanner[0];
         if (stage == 1)
         {
             playerBanners = generateBanners(7, true);
+            currentEventBanners = playerBanners;
             
         } else if (stage == 2)
         {
@@ -77,7 +97,15 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
             new PlayerBanner(0, 0, "World", 98),
             new PlayerBanner(0, 0, playerName, basedSeed)
              };
+        } else if (stage == 3) //current player jump
+        {
+            playerBanners = new PlayerBanner[0];
+            personalBanner.SetActive(true);
+        } else if (stage == 4)
+        {
+            playerBanners = simulateMark(currentEventBanners, "LongJump", 2, 5); //makes marks for oppenents
         }
+        
         setLeaderboard(playerBanners, stage);
     }
 
@@ -102,7 +130,7 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
             banners[i] = new PlayerBanner(i, flagNum, name, (float)Math.Round(personalBest, 2)); //round personal bests to only two places
 
         }
-        banners[banners.Length - 1] = new PlayerBanner(0, 10, playerName, personalBests.longJump);
+        banners[banners.Length - 1] = new PlayerBanner(0, 10, playerName, personalBests.longJump, isPlayer:true);
         return sortBanners(banners, true);
     }
 
@@ -122,6 +150,37 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
         }
         return UnityEngine.Random.Range((float)basedSeed - seedSpreadDown, basedSeed + seedSpreadUp + 1f);
         
+    }
+
+    //-100 is empty
+    //-1000 is foul
+    //simulates marks for the oppenents based on the spread given in the parameters
+    private PlayerBanner[] simulateMark(PlayerBanner[] playerBanners, string theEvent, float spreadUp, float spreadDown)
+    {
+        foreach (PlayerBanner pb in playerBanners)
+        {
+            if (!pb.isPlayer) //making sure the banner is not for the player
+            {
+                if (pb.mark1 == -100)
+                {
+                    pb.mark1 = UnityEngine.Random.Range((float)pb.bestMark - spreadDown, pb.bestMark + spreadUp + 1f);
+                    continue;
+                }
+                if (pb.mark2 == -100)
+                {
+                    pb.mark2 = UnityEngine.Random.Range((float)pb.bestMark - spreadDown, pb.bestMark + spreadUp + 1f);
+                    continue;
+                }
+                if (pb.mark3 == -100)
+                {
+                    pb.mark3 = UnityEngine.Random.Range((float)pb.bestMark - spreadDown, pb.bestMark + spreadUp + 1f);
+                    continue;
+                }
+            }
+            
+        }
+        return playerBanners;
+
     }
 
     private PlayerBanner[] sortBanners(PlayerBanner[] banners, bool bigOnTop) //sorts the banners by big or small on the top in the array
@@ -155,9 +214,11 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
     //mode 0 = hide leaderboard
     //mode 1 = normal 8 person leaderboard with best marks
     //mode 2 = olympic and world records and personal bests
+    //mode 3 = current jumps
+    //mode 4 = 3 best marks for all players
     private void setLeaderboard(PlayerBanner[] playerBanners, int mode) //sets the leaderboard according to the array of playerBanners that it is given
     {
-        for (int i = 0; i < playerBanners.Length; i++) //make all banenrs appear
+        for (int i = 0; i < playerBanners.Length; i++) //make all banners appear
         {
             leaderboardBanners[i].gameObject.SetActive(true);
         }
@@ -186,13 +247,52 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
                 leaderboardBanners[i].GetComponentsInChildren<RectTransform>(true)[6].gameObject.SetActive(true); //record label mark
                 textBoxes[3].text = playerBanners[i].bestMark.ToString(); //setting record marks
 
+            } else if (mode == 4)
+            {
+                leaderboardBanners[i].GetComponentsInChildren<RectTransform>(true)[1].gameObject.SetActive(false); //record mark label
+                leaderboardBanners[i].GetComponentsInChildren<RectTransform>(true)[7].gameObject.SetActive(true); //record label mark
+                leaderboardBanners[i].GetComponentsInChildren<RectTransform>(true)[8].gameObject.SetActive(true); //record mark label
+                leaderboardBanners[i].GetComponentsInChildren<RectTransform>(true)[9].gameObject.SetActive(true); //record label mark
+                textBoxes[4].text = markToString(playerBanners[i].mark1);
+                textBoxes[5].text = markToString(playerBanners[i].mark2);
+                textBoxes[6].text = markToString(playerBanners[i].mark3);
+
             }
-           
+
         }
         for (int i = playerBanners.Length; i < 8; i++) //remove banners that are not needed
         {
             leaderboardBanners[i].gameObject.SetActive(false);
         }
+        if (mode == 3)
+        {
+            TextMeshProUGUI[] textBoxes = personalBanner.GetComponentsInChildren<TextMeshProUGUI>(true);
+            for (int j = 4; j < personalBanner.GetComponentsInChildren<RectTransform>(true).Length; j++)
+            {
+                if (j <=6 || j>9) personalBanner.GetComponentsInChildren<RectTransform>(true)[j].gameObject.SetActive(false); //make the banner empty
+                //j==0 is the main banner
+                // j <= 6; j > 9 is the bound for the items that are needed
+            }
+            textBoxes[4].text = personalBannersMarks[0];
+            textBoxes[5].text = personalBannersMarks[1];
+            textBoxes[6].text = personalBannersMarks[2];
+
+        }
+    }
+
+    private string markToString(float mark)
+    {
+        if (mark == -100)
+        {
+            return "X";
+        } else if (mark == -1000)
+        {
+            return "FOUL";
+        } else
+        {
+            return (mark / 12) + "'" + (mark % 12) + "''";
+        }
+        
     }
 
 
@@ -201,3 +301,5 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
 //TODO Animations for the leaderboard
 //TODO flags for the leaderboard
 //TODO Make names list for players
+
+//TODO add fouls for simulated oppenents

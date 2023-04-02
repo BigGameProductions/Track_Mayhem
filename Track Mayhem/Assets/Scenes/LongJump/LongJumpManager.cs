@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +10,8 @@ public class LongJumpManager : MonoBehaviour
     [SerializeField] private Image runMeterBar; //the bar that is displayed on the run meter
     [SerializeField] private Image jumpMeterBar;//the bar that is displayed on the jump meter
     [SerializeField] private GameObject player; //the player controller
+
+    [SerializeField] private LeaderboardManager leaderboardManager;
 
     [SerializeField] private Camera runningCamera;//camera for running
     [SerializeField] private Camera jumpingCamera;//camera for jumping
@@ -35,6 +38,15 @@ public class LongJumpManager : MonoBehaviour
     [SerializeField] private float increaseForBarToTheTop;//stores distance from the bottom of the bar to the top
     [SerializeField] private float barDecreaseSpeed;//stores how fast the bar decreases
 
+    private string[] currentJumps; //stores all the jumps that the player has taken
+    private int currentJumpNumber = 0; //stores the amount of jumps that player has taken
+
+    private Vector3 startingPlayerPosition = new Vector3(-2103.53f, 226.73f, -369.71f); //starting position of the runner
+
+    private bool isFoul = false; //tells if the current jump is a foul
+
+
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -45,6 +57,10 @@ public class LongJumpManager : MonoBehaviour
         jumpBarIncreasePerInteger = jumpMeterToTop / 200f;
 
         jumpMeterBar.gameObject.transform.parent.gameObject.SetActive(false); //hides the jump meter
+
+        currentJumps = new string[] {"X", "X", "X" };
+
+        player.transform.position = startingPlayerPosition; //puts player in starting position
     }
 
     // Update is called once per frame
@@ -69,6 +85,12 @@ public class LongJumpManager : MonoBehaviour
                 runningSpeed = maxSpeed;
             }
             runMeterBar.transform.position = new Vector3(runMeterBar.transform.position.x, startingBarHeight + (runningSpeed * barIncreasePerSpeed), runMeterBar.transform.position.z);
+            if (player.transform.position.x > -1901) //testing for an automatic foul by running past the board
+            {
+                isFoul = true;
+                currentJumps[currentJumpNumber] = "FOUL";
+                afterJump();
+            }
             if (Input.GetKeyDown(KeyCode.P)) //if the player presses the jump button
             {
                 runningCamera.enabled = false;
@@ -78,7 +100,7 @@ public class LongJumpManager : MonoBehaviour
                 jumpMeterBar.gameObject.transform.parent.gameObject.SetActive(true); //sets the jump meter to showing
             }
         }
-        if (jumpMeterBar.gameObject.transform.parent.gameObject.activeInHierarchy)
+        if (jumpMeterBar.gameObject.transform.parent.gameObject.activeInHierarchy) //about to jump
         {
             
             jumpMeterSpeed += Time.deltaTime * jumpBarSpeed * (jumpMeterDirection ? -1:1);
@@ -87,9 +109,13 @@ public class LongJumpManager : MonoBehaviour
                 jumpMeterDirection = !jumpMeterDirection;
             }
             jumpMeterBar.transform.position = new Vector3(startingJumpBar + (jumpMeterSpeed * jumpBarIncreasePerInteger), jumpMeterBar.transform.position.y, jumpMeterBar.transform.position.z);
-            if (Input.GetKeyDown(KeyCode.Space))
+            if (Input.GetKeyDown(KeyCode.Space)) //makes jump
             {
                 jumpBarSpeed = 0;
+                if (player.transform.position.x > -1902.73) //testing got jumping foul
+                {
+                    isFoul = true;
+                }
                 StartCoroutine(jumpMeterHold(0.5f)); //calls waiting method 
             }
         }
@@ -101,6 +127,7 @@ public class LongJumpManager : MonoBehaviour
                 if (playerHeight<227.4 && playerHeight>225.5) //checks if the leg pull is within an optimal range to work
                 {
                     player.GetComponent<Rigidbody>().velocity = new Vector3(pullInLegPower, 0, 0); //gives a little extra boost
+                    StartCoroutine(legKickVelocity(0.5f)); //make sure the kick doesn;t last for ever
                 }
                 else
                 {
@@ -115,10 +142,18 @@ public class LongJumpManager : MonoBehaviour
             if (player.transform.position.y<225.5)
             {
                 player.GetComponent<Rigidbody>().useGravity = false; //stops the jumping animation loop
+                StartCoroutine(legKickVelocity(0.2f)); //stop the landing from going forever
                 StartCoroutine(waitAfterJump());
             }
         }
         
+    }
+
+    IEnumerator legKickVelocity(float time)
+    {
+        yield return new WaitForSeconds(time);
+        player.GetComponent<Rigidbody>().velocity = new Vector3(0, 0, 0); //makes the player stop the kick velocity
+
     }
 
     IEnumerator waitAfterJump()
@@ -127,10 +162,42 @@ public class LongJumpManager : MonoBehaviour
         //-1899.73 At 0 feet 
         //-1864.7 At 19 feet
         //-1875.03 At 16 feet
-        float spacesPerInch = (1875.03f - 1864.7f) / 36f; //16 feet minus 19 feet divided by the inches in 3 feet
-        int totalInches = (int)Math.Round((1930.4792068f + player.transform.position.x) / spacesPerInch); //finds total inches that have been jumped (distance jumped divided by spaces per inch of the sand)
+        if (isFoul)
+        {
+            currentJumps[currentJumpNumber] = "FOUL";
+        } else {
+            float spacesPerInch = (1875.03f - 1864.7f) / 36f; //16 feet minus 19 feet divided by the inches in 3 feet
+            int totalInches = (int)Math.Round((1930.4792068f + player.transform.position.x) / spacesPerInch); //finds total inches that have been jumped (distance jumped divided by spaces per inch of the sand)
+            currentJumps[currentJumpNumber] = (totalInches / 12) + "'" + (totalInches % 12) + "''";
+        }
+        
+        afterJump();
+       
     }
 
+    private void afterJump()
+    {
+        leaderboardManager.showCurrentPlayerMarks(currentJumps, 3); //updates and shows the player leaderboard
+        currentJumpNumber++; //inceases to the next jump
+        player.GetComponentInChildren<Animator>().Play("EndStance"); //rotates the player to the camera
+        player.transform.position = new Vector3(-1966, 226.73f, -370.56f); //makes the player in the middle of the runway for show
+        runningSpeed = 0; //resets running speed
+        StartCoroutine(waitAfterPersonalBanner(2));
+    }
+
+    IEnumerator waitAfterPersonalBanner(int time)
+    {
+        yield return new WaitForSeconds(time);
+        player.transform.position = startingPlayerPosition;
+        player.GetComponentInChildren<Animator>().Play("Running");
+        runningCamera.enabled = true; //shows running camera
+        jumpingCamera.enabled = false; //hides jumping camera
+        runMeterBar.transform.parent.gameObject.SetActive(true); //shows run meter bar
+        leaderboardManager.hidePersonalBanner(); //hides personal banner
+        player.GetComponentsInChildren<Transform>()[1].eulerAngles = new Vector3(0, 90, 0); //reset rotation
+        player.GetComponentsInChildren<Transform>()[1].localPosition = new Vector3(0, 0, 0); //reset position
+        isFoul = false; //makes the jump not a foul
+    }
 
     IEnumerator jumpMeterHold(float time) //holds the meter forzen for time so you can she what it landed on
     {
@@ -156,6 +223,6 @@ public class LongJumpManager : MonoBehaviour
         
 }
 
-//TODO make the spacebar get in legs
-//TODO make faults
 //TODO make speed equal to the running
+//TODO make solid transisions between runs
+//TODO resize character for all events, mainly running and hurdles
