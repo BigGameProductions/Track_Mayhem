@@ -27,7 +27,7 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
 
     private float basedSeed; //stores the based seed for the current event
 
-    private string[] personalBannersMarks; //stores the given set of marks for the event
+    private PlayerBanner personalBannersMarks; //stores the given set of marks for the event
 
     public void LoadData(GameData data)
     {
@@ -61,7 +61,7 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
     }
 
 
-    public void showCurrentPlayerMarks(string[] marks, int stageNum) //shows the single banner of the player preformace
+    public void showCurrentPlayerMarks(PlayerBanner marks, int stageNum) //shows the single banner of the player preformace
     {
         personalBannersMarks = marks;
         updateCinematicStage(stageNum);
@@ -71,7 +71,38 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
     {
         updateCinematicStage(0);
     }
+    
 
+
+    public void showUpdatedLeaderboard() //shows the updated numbers for all oppenents
+    {
+        updateCinematicStage(4); //show the updated leaderboard
+        StartCoroutine(timeOfLeaderboard(3)); //hides the leaderboard after x seconds
+    }
+
+    public PlayerBanner getPlayerBanner()
+    {
+        foreach (PlayerBanner pb in currentEventBanners)
+        {
+            if (pb.isPlayer)
+            {
+                return pb;
+            }
+        }
+        return null;
+    }
+
+    IEnumerator timeOfLeaderboard(int time)
+    {
+        yield return new WaitForSeconds(time);
+        updateCinematicStage(0);
+    }
+
+    public bool leaderBoardVisble()
+    {
+        return leaderBoardHeader.activeInHierarchy;
+    }
+         
     //stage same as mode for setLeaderboard
     private void updateCinematicStage(int stage)
     {
@@ -103,7 +134,8 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
             personalBanner.SetActive(true);
         } else if (stage == 4)
         {
-            playerBanners = simulateMark(currentEventBanners, "LongJump", 2, 5); //makes marks for oppenents
+            currentEventBanners = simulateMark(currentEventBanners, eventName, 2, 5); //makes marks for oppenents
+            playerBanners = currentEventBanners;
         }
         
         setLeaderboard(playerBanners, stage);
@@ -142,14 +174,20 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
     {
         if (useSeeded)
         {
-            if (theEvent == "LongJump")
-            {
-                basedSeed = personalBests.longJump;
-
-            }
+            basedSeed = getMarkForEvent(theEvent);
         }
-        return UnityEngine.Random.Range((float)basedSeed - seedSpreadDown, basedSeed + seedSpreadUp + 1f);
+        return UnityEngine.Random.Range((float)basedSeed - seedSpreadDown, basedSeed + seedSpreadUp + 1f) * 12;
         
+    }
+
+    public float getMarkForEvent(string theEvent) //returns the player mark in the save files for the given event
+    {
+        if (theEvent == "LongJump")
+        {
+            return personalBests.longJump;
+
+        }
+        return 0;
     }
 
     //-100 is empty
@@ -179,11 +217,11 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
             }
             
         }
-        return playerBanners;
+        return sortBanners(playerBanners, true, true);
 
     }
 
-    private PlayerBanner[] sortBanners(PlayerBanner[] banners, bool bigOnTop) //sorts the banners by big or small on the top in the array
+    private PlayerBanner[] sortBanners(PlayerBanner[] banners, bool bigOnTop, bool ofThree=false) //sorts the banners by big or small on the top in the array
     {
         List<PlayerBanner> sortedBanners = new List<PlayerBanner>();
         sortedBanners.Add(new PlayerBanner(0, 0, "SortingPlaceholder", float.MaxValue)); //placeholder to help sort the items in the array by value
@@ -191,7 +229,7 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
         {
             for (int i = 0; i < sortedBanners.Count; i++)
             {
-                if (pb.bestMark < sortedBanners.ElementAt(i).bestMark) //sort my best mark
+                if ((ofThree ? Math.Max(Math.Max(pb.mark1, pb.mark2), pb.mark3) : pb.bestMark) < sortedBanners.ElementAt(i).bestMark) //sort my best mark
                 {
                     sortedBanners.Insert(i, pb);
                     break;
@@ -238,14 +276,14 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
             if (mode == 1)
             {
                 leaderboardBanners[i].GetComponentsInChildren<RectTransform>(true)[4].gameObject.SetActive(true); //best mark label
-                textBoxes[2].text = playerBanners[i].bestMark.ToString(); //best mark text box
+                textBoxes[2].text = markToString(playerBanners[i].bestMark); //best mark text box
             }
             else if (mode == 2)
             {
                 leaderboardBanners[i].GetComponentsInChildren<RectTransform>(true)[1].gameObject.SetActive(false); //record mark label
                 leaderboardBanners[i].GetComponentsInChildren<RectTransform>(true)[5].gameObject.SetActive(true); //record mark label
                 leaderboardBanners[i].GetComponentsInChildren<RectTransform>(true)[6].gameObject.SetActive(true); //record label mark
-                textBoxes[3].text = playerBanners[i].bestMark.ToString(); //setting record marks
+                textBoxes[3].text = markToString(playerBanners[i].bestMark); //setting record marks
 
             } else if (mode == 4)
             {
@@ -273,9 +311,9 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
                 //j==0 is the main banner
                 // j <= 6; j > 9 is the bound for the items that are needed
             }
-            textBoxes[4].text = personalBannersMarks[0];
-            textBoxes[5].text = personalBannersMarks[1];
-            textBoxes[6].text = personalBannersMarks[2];
+            textBoxes[4].text = markToString(personalBannersMarks.mark1);
+            textBoxes[5].text = markToString(personalBannersMarks.mark2);
+            textBoxes[6].text = markToString(personalBannersMarks.mark3);
 
         }
     }
@@ -290,7 +328,7 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
             return "FOUL";
         } else
         {
-            return (mark / 12) + "'" + (mark % 12) + "''";
+            return ((int)mark / 12) + "'" + Math.Round(mark % 12, 2) + "''";
         }
         
     }
@@ -303,3 +341,4 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
 //TODO Make names list for players
 
 //TODO add fouls for simulated oppenents
+//TODO make oppenents round to nearest 0.25

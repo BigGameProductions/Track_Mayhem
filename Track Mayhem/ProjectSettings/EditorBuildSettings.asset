@@ -4,5 +4,11 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/LongJump/LongJump.unity
+    guid: a9397f0ebbe2e4af5af58ef9bfc28b9e
+  - enabled: 1
+    path: Assets/Scenes/EndScreen/EndScreen.unity
+    guid: 64638d387a0a147a6b5c01269d5432dd
   m_configObjects: {}
