@@ -8,38 +8,19 @@ using UnityEngine.SceneManagement;
 
 public class LongJumpManager : MonoBehaviour
 {
-    [SerializeField] private Image runMeterBar; //the bar that is displayed on the run meter
-    [SerializeField] private Image jumpMeterBar;//the bar that is displayed on the jump meter
     [SerializeField] private GameObject player; //the player controller
 
-    [SerializeField] private LeaderboardManager leaderboardManager;
+    [SerializeField] private LeaderboardManager leaderboardManager; //stores the current leaderboard manager
 
     [SerializeField] private Camera runningCamera;//camera for running
     [SerializeField] private Camera jumpingCamera;//camera for jumping
     [SerializeField] private Camera frontCamera; //camera for front facing celebration
 
-    public float runningSpeed = 0; //stores the current running speed of the player
-    public float jumpMeterSpeed = 0; //stores the current value of the jump meter
-    [SerializeField] private float speedPerClick = 30; //temporary storing the speed gained when clicked
-    private float maxSpeed = 300; //temporary storing the max speed for the player
     [SerializeField] private float runningSpeedRatio; //stores the ratio for running compared to runningSpeed
     [SerializeField] private float animationRunningSpeedRatio; //stores the ratio for animation speed compared to runningSpeed
 
-    private bool jumpMeterDirection = false;//direction of the jemp meter
-    private float startingJumpBar;//stores the starting position of the jump meter bar
-    private float jumpBarIncreasePerInteger;//stores the amount the bar moves per increase
-    [SerializeField] private float jumpMeterToTop;//stores the distance from the begining to the end of the jump meter
-    [SerializeField] private float jumpBarSpeed; //stores how fast the jump bar moves
-    private float movingBarSpeed;
-
     [SerializeField] private float powerToAnimationSpeedRatio;
     [SerializeField] private float pullInLegPower;
-
-
-    private float startingBarHeight; //stores the starting height of the meter bar
-    private float barIncreasePerSpeed; //stores the amountd the ui bar increases per speed
-    [SerializeField] private float increaseForBarToTheTop;//stores distance from the bottom of the bar to the top
-    [SerializeField] private float barDecreaseSpeed;//stores how fast the bar decreases
 
     private int currentJumpNumber = 0; //stores the amount of jumps that player has taken
     PlayerBanner currentPlayerBanner; //stores the current player data in a banner class
@@ -48,8 +29,6 @@ public class LongJumpManager : MonoBehaviour
 
     private bool isFoul = false; //tells if the current jump is a foul
 
-    public float totalRunningSpeed; //total speed that has been made for not being idle
-    public float timeElapsedRunning; //time that is elapsed for running not idle
 
     [SerializeField] private Image foulImage; //is the image that appears when you foul or don't land in the sand
     [SerializeField] private Image prImage; //is the image that appears when you pr
@@ -57,17 +36,15 @@ public class LongJumpManager : MonoBehaviour
     [SerializeField] private ParticleSystem sandEffect;
     [SerializeField] private ParticleSystem jumpSparkle;
 
+    [SerializeField] RunningMeterBar runningMeter;
+    [SerializeField] JumpingMeter jumpMeter;
+
     
     // Start is called before the first frame update
     void Start()
     {
-        startingBarHeight = runMeterBar.transform.position.y;
-        barIncreasePerSpeed = increaseForBarToTheTop / maxSpeed;
 
-        startingJumpBar = jumpMeterBar.transform.position.x;
-        jumpBarIncreasePerInteger = jumpMeterToTop / 200f;
-
-        jumpMeterBar.gameObject.transform.parent.gameObject.SetActive(false); //hides the jump meter
+        jumpMeter.jumpBar.gameObject.transform.parent.gameObject.SetActive(false); //hides the jump meter
 
         player.transform.position = startingPlayerPosition; //puts player in starting position
 
@@ -80,31 +57,19 @@ public class LongJumpManager : MonoBehaviour
     {
         if (runningCamera.enabled)
         {
-            if (runningSpeed <= 0) //makes sure running speed does not go below 0
+            runningMeter.updateRunMeter();
+            if (Input.GetKeyDown(KeyCode.Space) && runningMeter.runningBar.transform.parent.gameObject.activeInHierarchy) //updating speed on click
             {
-                runningSpeed = 0;
-            }
-            else
-            {
-                runningSpeed -= Time.deltaTime * barDecreaseSpeed; //decreses running speed
-            }
-            if (Input.GetKeyDown(KeyCode.Space) && runMeterBar.transform.parent.gameObject.activeInHierarchy) //updating speed on click
-            {
-                runningSpeed += speedPerClick;
+                runningMeter.increaseHeight();
                 if (leaderboardManager.leaderBoardVisble()) //hides the leaderboard if the player clicks
                 {
                     leaderboardManager.hidePersonalBanner();
                 }
             }
-            if (runningSpeed > maxSpeed) //making a max speed
-            {
-                runningSpeed = maxSpeed;
-            }
-            runMeterBar.transform.position = new Vector3(runMeterBar.transform.position.x, startingBarHeight + (runningSpeed * barIncreasePerSpeed), runMeterBar.transform.position.z);
-            if (player.transform.position.x > -1901 && runMeterBar.transform.parent.gameObject.activeInHierarchy) //testing for an automatic foul by running past the board
+            if (player.transform.position.x > -1901 && runningMeter.runningBar.transform.parent.gameObject.activeInHierarchy) //testing for an automatic foul by running past the board
             {
                 isFoul = true; //set the foul to true
-                runMeterBar.transform.parent.gameObject.SetActive(false); //hides the run meter
+                runningMeter.runningBar.transform.parent.gameObject.SetActive(false); //hides the run meter
                 foulImage.enabled = true;
                 StartCoroutine(runThroughWait(1.5f));
             }
@@ -112,11 +77,11 @@ public class LongJumpManager : MonoBehaviour
             {
                 runningCamera.enabled = false;
                 jumpingCamera.enabled = true;
-                runMeterBar.transform.parent.gameObject.SetActive(false); //hide run meter
+                runningMeter.runningBar.transform.parent.gameObject.SetActive(false); //hide run meter
                 player.GetComponentInChildren<Animator>().speed = 0; //make running animation stop
-                jumpMeterBar.gameObject.transform.parent.gameObject.SetActive(true); //sets the jump meter to showing
-                movingBarSpeed = jumpBarSpeed; //setting the bar speed to normal  speed
-                float averageSpeed = totalRunningSpeed / timeElapsedRunning;
+                jumpMeter.jumpBar.gameObject.transform.parent.gameObject.SetActive(true); //sets the jump meter to showing
+                jumpMeter.setToRegularSpeed(); //setting the bar speed to normal  speed
+                float averageSpeed = runningMeter.getAverageSpeed();
                 if (averageSpeed > 7500 && averageSpeed < 9500)
                 {
                     jumpSparkle.startColor = Color.green;
@@ -128,27 +93,16 @@ public class LongJumpManager : MonoBehaviour
                     jumpSparkle.startColor = Color.red;
                 }
                 jumpSparkle.Play();
+                StartCoroutine(jumpMeterTimeLimit(3)); //makes a time limit of x seconds for jumping angle
             }
         }
-        if (jumpMeterBar.gameObject.transform.parent.gameObject.activeInHierarchy) //about to jump
+        if (jumpMeter.jumpBar.gameObject.transform.parent.gameObject.activeInHierarchy) //about to jump
         {
-            
-            jumpMeterSpeed += Time.deltaTime * movingBarSpeed * (jumpMeterDirection ? -1:1);
-            if (jumpMeterSpeed >= 200 || jumpMeterSpeed <=0)
-            {
-                if (jumpMeterSpeed >= 200) //prevents bar from going out of bounds
-                {
-                    jumpMeterSpeed = 200;
-                } else
-                {
-                    jumpMeterSpeed = 0;
-                }
-                jumpMeterDirection = !jumpMeterDirection;
-            }
-            jumpMeterBar.transform.position = new Vector3(startingJumpBar + (jumpMeterSpeed * jumpBarIncreasePerInteger), jumpMeterBar.transform.position.y, jumpMeterBar.transform.position.z);
+            jumpMeter.updateJumpMeter();
             if (Input.GetKeyDown(KeyCode.Space)) //makes jump
             {
-                movingBarSpeed = 0; //stopping the bar from moving
+                jumpMeter.MakeJump();
+                float jumpMeterSpeed = jumpMeter.jumpMeterSpeed;
                 if (player.transform.position.x > -1895.73) //testing got jumping foul
                 {
                     isFoul = true;
@@ -209,7 +163,24 @@ public class LongJumpManager : MonoBehaviour
         
     }
 
-    IEnumerator runThroughWait(float time)
+    IEnumerator jumpMeterTimeLimit(float time) //waits x seconds before saying the player has taken too long with their jumping meter
+    {
+        yield return new WaitForSeconds(time);
+        if (jumpMeter.jumpBar.transform.parent.gameObject.activeInHierarchy)
+        {
+            jumpMeter.jumpBar.transform.parent.gameObject.SetActive(false);
+            runningCamera.enabled = true;
+            runningMeter.runningSpeed = 10000;
+            foulImage.enabled = true;
+            yield return new WaitForSeconds(1.5f);
+            runningCamera.enabled = false;
+            updatePlayerBanner(-1000);
+            afterJump();
+        }
+
+    }
+
+    IEnumerator runThroughWait(float time) //waits for the player to run through before calling a foul
     {
         yield return new WaitForSeconds(time);
         runningCamera.enabled = false; //stops the running loop
@@ -218,14 +189,14 @@ public class LongJumpManager : MonoBehaviour
         afterJump();
     }
 
-    IEnumerator legKickVelocity(float time)
+    IEnumerator legKickVelocity(float time) //holds the velocity of the kicking
     {
         yield return new WaitForSeconds(time);
         player.GetComponent<Rigidbody>().velocity = new Vector3(0, 0, 0); //makes the player stop the kick velocity
 
     }
 
-    IEnumerator waitAfterJump()
+    IEnumerator waitAfterJump() //holds the player for x seconds after they jump
     {
         yield return new WaitForSeconds(1);
         //-1899.73 At 0 feet 
@@ -287,7 +258,7 @@ public class LongJumpManager : MonoBehaviour
         frontCamera.enabled = true;
         jumpingCamera.enabled = false;
         player.transform.position = new Vector3(-1966, 226.73f, -370.56f); //makes the player in the middle of the runway for show
-        runningSpeed = 0; //resets running speed
+        runningMeter.runningSpeed = 0; //resets running speed
         StartCoroutine(waitAfterPersonalBanner(3));
     }
 
@@ -303,7 +274,7 @@ public class LongJumpManager : MonoBehaviour
         runningCamera.enabled = true; //shows running camera
         jumpingCamera.enabled = false; //hides jumping camera
         frontCamera.enabled = false;
-        runMeterBar.transform.parent.gameObject.SetActive(true); //shows run meter bar
+        runningMeter.runningBar.transform.parent.gameObject.SetActive(true); //shows run meter bar
         leaderboardManager.hidePersonalBanner(); //hides personal banner
         player.GetComponentsInChildren<Transform>()[1].eulerAngles = new Vector3(0, 90, 0); //reset rotation
         player.GetComponentsInChildren<Transform>()[1].localPosition = new Vector3(0, 0, 0); //reset position
@@ -316,9 +287,9 @@ public class LongJumpManager : MonoBehaviour
     IEnumerator jumpMeterHold(float time) //holds the meter forzen for time so you can she what it landed on
     {
         yield return new WaitForSeconds(time);
-        jumpMeterBar.gameObject.transform.parent.gameObject.SetActive(false); //sets the jump meter to hiding
+        jumpMeter.jumpBar.gameObject.transform.parent.gameObject.SetActive(false); //sets the jump meter to hiding
         float powerPercent = 1; //percent of max power used
-        float averageSpeed = totalRunningSpeed / timeElapsedRunning; //gets average running speed
+        float averageSpeed = runningMeter.getAverageSpeed(); //gets average running speed
         if (averageSpeed <= 8500) //sets percentage based on distance from 0 to 8500. 8500 is considered the perfect run
         {
             powerPercent = averageSpeed / 8500;
@@ -328,7 +299,7 @@ public class LongJumpManager : MonoBehaviour
         }
         float power = 10; //temp
         power *= powerPercent;
-        float jumpPercent = 1 - (Math.Abs(100 - jumpMeterSpeed) / 100);
+        float jumpPercent = 1 - (Math.Abs(100 - jumpMeter.jumpMeterSpeed) / 100);
         power *= jumpPercent;
         power += 10;
         player.GetComponentInChildren<Animator>().Play("LongJump");
@@ -341,18 +312,9 @@ public class LongJumpManager : MonoBehaviour
     {
         if (runningCamera.enabled)
         {
-            player.transform.Translate(new Vector3(0, 0, runningSpeed * runningSpeedRatio)); //making character move according to run meter
-            player.GetComponentInChildren<Animator>().speed = runningSpeed * animationRunningSpeedRatio; //making the animation match the sunning speed
-            if (runningSpeed == 0)
-            {
-                totalRunningSpeed = 0;
-                timeElapsedRunning = 0;
-            } else
-            {
-                totalRunningSpeed += runningSpeed;
-                timeElapsedRunning += Time.deltaTime;
-                
-            }
+            player.transform.Translate(new Vector3(0, 0, runningMeter.runningSpeed * runningSpeedRatio)); //making character move according to run meter
+            player.GetComponentInChildren<Animator>().speed = runningMeter.runningSpeed * animationRunningSpeedRatio; //making the animation match the sunning speed
+            runningMeter.updateTimeElapsed();
         }
     }
 
@@ -363,4 +325,5 @@ public class LongJumpManager : MonoBehaviour
 
 //TODO extend sand pit
 
-//TODO effects
+//TODO effects. Make them more accurate and look nicer
+

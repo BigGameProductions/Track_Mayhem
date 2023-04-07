@@ -302,6 +302,54 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 1610651221163694002, guid: 632cf9cd038c14c79890368264f87693, type: 3}
   m_PrefabInstance: {fileID: 64417120}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &91191522
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 91191524}
+  - component: {fileID: 91191523}
+  m_Layer: 0
+  m_Name: JumpMeterManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &91191523
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 91191522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c45b9148c84754a7a8e961db1b2379a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  jumpBar: {fileID: 453169777}
+  jumpMeterSpeed: 0
+  jumpBarSpeed: 250
+  jumpMeterToTop: 140
+--- !u!4 &91191524
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 91191522}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2097.1787, y: 233.8453, z: -369.6538}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 10
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &101636706
 GameObject:
   m_ObjectHideFlags: 0
@@ -5554,6 +5602,58 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!1 &486598607
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 486598609}
+  - component: {fileID: 486598608}
+  m_Layer: 0
+  m_Name: RunMeterManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &486598608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 486598607}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4df00b3ad9bd4564971c2cc1001701c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  runningBar: {fileID: 2116960129}
+  runningSpeed: 0
+  speedPerClick: 75
+  startingBarHeight: 0
+  maxSpeed: 300
+  barIncreasePerSpeed: 0
+  barDecreaseSpeed: 300
+  increaseForBarToTheTop: 140
+--- !u!4 &486598609
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 486598607}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2097.1787, y: 233.8453, z: -369.6538}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 9
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &577214912 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1610651221163694003, guid: 632cf9cd038c14c79890368264f87693, type: 3}
@@ -6131,30 +6231,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2971a852dde1348efbbca582142ef792, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  runMeterBar: {fileID: 2116960129}
   jumpMeterBar: {fileID: 453169777}
   player: {fileID: 1387769874}
   leaderboardManager: {fileID: 730125508}
   runningCamera: {fileID: 964258461}
   jumpingCamera: {fileID: 754744256}
   frontCamera: {fileID: 467020788}
-  runningSpeed: 0
   jumpMeterSpeed: 0
-  speedPerClick: 75
   runningSpeedRatio: 0.004
   animationRunningSpeedRatio: 0.008
   jumpMeterToTop: 140
   jumpBarSpeed: 250
   powerToAnimationSpeedRatio: 0.07
   pullInLegPower: 7
-  increaseForBarToTheTop: 140
-  barDecreaseSpeed: 300
-  totalRunningSpeed: 0
-  timeElapsedRunning: 0
   foulImage: {fileID: 101636708}
   prImage: {fileID: 300349697}
   sandEffect: {fileID: 1807054024}
   jumpSparkle: {fileID: 165454587}
+  runningMeter: {fileID: 486598608}
+  jumpMeter: {fileID: 91191523}
 --- !u!4 &1139171310
 Transform:
   m_ObjectHideFlags: 0
