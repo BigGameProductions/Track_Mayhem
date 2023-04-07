@@ -45,6 +45,7 @@ public class LongJumpManager : MonoBehaviour
     {
 
         jumpMeter.jumpBar.gameObject.transform.parent.gameObject.SetActive(false); //hides the jump meter
+        player.GetComponentInChildren<Animator>().Play("Running");
 
         player.transform.position = startingPlayerPosition; //puts player in starting position
 
@@ -127,7 +128,6 @@ public class LongJumpManager : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 float playerHeight = player.transform.position.y;
-                Debug.Log(playerHeight);
                 if (playerHeight<227.4 && playerHeight>225) //checks if the leg pull is within an optimal range to work
                 {
                     player.GetComponent<Rigidbody>().velocity = new Vector3(pullInLegPower, 0, 0); //gives a little extra boost
@@ -326,4 +326,6 @@ public class LongJumpManager : MonoBehaviour
 //TODO extend sand pit
 
 //TODO effects. Make them more accurate and look nicer
+
+//TODO fix the ending not sorting banners right
 

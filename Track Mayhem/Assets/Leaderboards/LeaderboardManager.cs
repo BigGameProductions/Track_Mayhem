@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class LeaderboardManager : MonoBehaviour, IDataPersistance
 {
@@ -44,20 +45,32 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
     {
         //nothing for now
 
-        //temp
-        cinematicCamera.GetComponent<Animator>().speed = 10;
-        //temp
+        if (SceneManager.GetActiveScene().name != "EndScreen") //tests to make sure it is an event screen
+        {
+            //temp
+            cinematicCamera.GetComponent<Animator>().speed = 10;
+            //temp
+        } else
+        {
+            currentEventBanners = PublicData.playerBannerTransfer;
+            setLeaderboard(currentEventBanners, PublicData.leaderBoardMode); //shows the leaderboard sorted
+        }
 
-        
+
+
     }
 
     private void Update()
     {
-        if (cinematicCamera.GetComponent<Animator>().GetInteger("Stage") != animationStage)
+        if (SceneManager.GetActiveScene().name != "EndScreen")
         {
-            animationStage = cinematicCamera.GetComponent<Animator>().GetInteger("Stage"); //update the current stage
-            updateCinematicStage(animationStage); //update the leaderboard
+            if (cinematicCamera.GetComponent<Animator>().GetInteger("Stage") != animationStage)
+            {
+                animationStage = cinematicCamera.GetComponent<Animator>().GetInteger("Stage"); //update the current stage
+                updateCinematicStage(animationStage); //update the leaderboard
+            }
         }
+        
     }
 
 
@@ -136,8 +149,10 @@ public class LeaderboardManager : MonoBehaviour, IDataPersistance
         {
             currentEventBanners = simulateMark(currentEventBanners, eventName, 2, 5); //makes marks for oppenents
             playerBanners = currentEventBanners;
+            PublicData.playerBannerTransfer = currentEventBanners; //sets the end screen leaderboard to match the current one
+            PublicData.leaderBoardMode = 4; //sets leaderboard mode for the end screen
         }
-        
+
         setLeaderboard(playerBanners, stage);
     }
 
